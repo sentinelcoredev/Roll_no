@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2nd PUC 2026 Roll Number Predictor</title>
+    <style>
+        :root {
+            --primary-color: #f29a2e; /* Matches the KSEAB header color */
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.4rem;
+        }
+        .info-box {
+            background-color: #eef2f5;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary-color);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #5cb85c; /* Matches KSEAB green */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+        }
+        .result h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+        }
+        .reg-number {
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>KARNATAKA II PUC EXAM-1<br>Roll Number Predictor 2026</h2>
+    
+    <div class="info-box">
+        <strong>Data Analysis:</strong><br>
+        • Format: 11 Digits<br>
+        • Pattern: <code>2026</code> (Year) + <code>9124</code> (Observed Code) + <code>XXX</code> (Student No.)<br>
+        • Total 2nd PUC Examinees: ~6.9 Lakhs (690,000) statewide.
+    </div>
+
+    <form id="predictorForm">
+        <label for="year">Exam Year Prefix</label>
+        <input type="number" id="year" value="2026" readonly>
+
+        <label for="collegeCode">College / Center Code</label>
+        <input type="number" id="collegeCode" value="9124" min="1000" max="9999" placeholder="e.g., 9124">
+
+        <label for="studentSeq">Student Sequence Number</label>
+        <input type="number" id="studentSeq" min="1" max="999" placeholder="e.g., 600">
+
+        <label for="randomize">Or Generate Random based on Population</label>
+        <select id="randomize">
+            <option value="no">Use my inputs above</option>
+            <option value="yes">Predict a random valid roll number</option>
+        </select>
+
+        <button type="button" onclick="predictRollNumber()">Predict Roll Number</button>
+    </form>
+
+    <div class="result" id="resultBox">
+        <h3>Predicted Registration No.</h3>
+        <div class="reg-number" id="outputReg"></div>
+    </div>
+</div>
+
+<script>
+    function predictRollNumber() {
+        const year = "2026";
+        const isRandom = document.getElementById('randomize').value === 'yes';
+        let finalRegNumber = "";
+
+        if (isRandom) {
+            // Karnataka PU Board max candidates is around ~6.9 Lakhs (690,000).
+            // This means the remaining 7 digits after "2026" max out around 6,900,000 mathematically 
+            // but the state uses a specific Center + Student ID format. 
+            // We'll generate a random valid center (4 digits) and a random student (3 digits).
+            
+            let randomCenterCode = Math.floor(1000 + Math.random() * 8999).toString();
+            
+            // Bias towards your specific observed code 30% of the time for relevance
+            if (Math.random() < 0.3) {
+                randomCenterCode = "9124"; 
+            }
+
+            let randomStudent = Math.floor(1 + Math.random() * 999).toString().padStart(3, '0');
+            finalRegNumber = year + randomCenterCode + randomStudent;
+            
+        } else {
+            let colCode = document.getElementById('collegeCode').value;
+            let stuSeq = document.getElementById('studentSeq').value;
+
+            if (!colCode || colCode.length !== 4) {
+                alert("Please enter a valid 4-digit college code (e.g., 9124).");
+                return;
+            }
+            if (!stuSeq) {
+                alert("Please enter a student sequence number.");
+                return;
+            }
+
+            // Pad the student sequence to ensure it's at least 3 digits (e.g., 1 becomes 001)
+            let paddedSeq = stuSeq.toString().padStart(3, '0');
+            
+            finalRegNumber = year + colCode + paddedSeq;
+        }
+
+        // Display Result
+        document.getElementById('outputReg').innerText = finalRegNumber;
+        document.getElementById('resultBox').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
+          
