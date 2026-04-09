@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2nd PUC 2026 Roll Number Predictor</title>
+    <title>2nd PUC 2026 Roll Number Predictor (Name-Based)</title>
     <style>
         :root {
             --primary-color: #f29a2e; /* Matches the KSEAB header color */
@@ -49,7 +49,7 @@
             margin-top: 15px;
             margin-bottom: 5px;
         }
-        input[type="number"], select {
+        input[type="number"], input[type="text"], select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -102,8 +102,9 @@
     <div class="info-box">
         <strong>Data Analysis:</strong><br>
         • Format: 11 Digits<br>
-        • Pattern: <code>2026</code> (Year) + <code>9124</code> (Observed Code) + <code>XXX</code> (Student No.)<br>
-        • Total 2nd PUC Examinees: ~6.9 Lakhs (690,000) statewide.
+        • Pattern: <code>2026</code> + <code>College Code</code> + <code>Deterministic ID</code> (001-999)<br>
+        • <strong>Update:</strong> The final 3 digits are now derived **entirely from the alphabet characters in your name**. Each character in your name contributes to a unique number, ensuring that for the same name and college code, the generated roll number will always be the same.<br>
+        • Total 2nd PUC Examinees: ~6.9 Lakhs statewide.
     </div>
 
     <form id="predictorForm">
@@ -113,35 +114,34 @@
         <label for="collegeCode">College / Center Code</label>
         <input type="number" id="collegeCode" value="9124" min="1000" max="9999" placeholder="e.g., 9124">
 
-        <label for="studentSeq">Student Sequence Number</label>
-        <input type="number" id="studentSeq" min="1" max="999" placeholder="e.g., 600">
+        <label for="studentName">Student Full Name (Alphabet-Based ID)</label>
+        <input type="text" id="studentName" placeholder="e.g., Arun Kumar, Likhith Gowda">
 
         <label for="randomize">Or Generate Random based on Population</label>
         <select id="randomize">
-            <option value="no">Use my inputs above</option>
+            <option value="no">Use my name and college code above</option>
             <option value="yes">Predict a random valid roll number</option>
         </select>
 
-        <button type="button" onclick="predictRollNumber()">Predict Roll Number</button>
+        <button type="button" onclick="predictRollNumberFromName()">Predict Roll Number</button>
     </form>
 
     <div class="result" id="resultBox">
-        <h3>Predicted Registration No.</h3>
+        <h3 id="resultText">Predicted Registration No.</h3>
         <div class="reg-number" id="outputReg"></div>
     </div>
 </div>
 
 <script>
-    function predictRollNumber() {
+    function predictRollNumberFromName() {
         const year = "2026";
         const isRandom = document.getElementById('randomize').value === 'yes';
         let finalRegNumber = "";
+        let stuNameForDisplay = "";
 
         if (isRandom) {
             // Karnataka PU Board max candidates is around ~6.9 Lakhs (690,000).
-            // This means the remaining 7 digits after "2026" max out around 6,900,000 mathematically 
-            // but the state uses a specific Center + Student ID format. 
-            // We'll generate a random valid center (4 digits) and a random student (3 digits).
+            // Generator logic: fully random college (4 digits) and fully random student (3 digits).
             
             let randomCenterCode = Math.floor(1000 + Math.random() * 8999).toString();
             
@@ -152,32 +152,53 @@
 
             let randomStudent = Math.floor(1 + Math.random() * 999).toString().padStart(3, '0');
             finalRegNumber = year + randomCenterCode + randomStudent;
+            stuNameForDisplay = "(Randomly generated)";
             
         } else {
-            let colCode = document.getElementById('collegeCode').value;
-            let stuSeq = document.getElementById('studentSeq').value;
+            const colCode = document.getElementById('collegeCode').value;
+            const stuNameRaw = document.getElementById('studentName').value;
 
             if (!colCode || colCode.length !== 4) {
                 alert("Please enter a valid 4-digit college code (e.g., 9124).");
                 return;
             }
-            if (!stuSeq) {
-                alert("Please enter a student sequence number.");
+            if (!stuNameRaw.trim()) {
+                alert("Please enter a student name to generate an alphabet-based ID.");
                 return;
             }
 
-            // Pad the student sequence to ensure it's at least 3 digits (e.g., 1 becomes 001)
-            let paddedSeq = stuSeq.toString().padStart(3, '0');
+            stuNameForDisplay = stuNameRaw;
+
+            // --- Deterministic Alphabet-Based Hashing Algorithm ---
+            // 1. Sanitize the name (trim, convert to uppercase, remove all whitespace)
+            const sanitizedName = stuNameRaw.trim().toUpperCase().replace(/\s+/g, '');
+            let hashValue = 0;
+            const multiplier = 31; // Common simple hash multiplier for character codes
+
+            // 2. Hash calculation: sum character codes with multiplier for spread
+            for (let i = 0; i < sanitizedName.length; i++) {
+                // hash = (hash * 31) + ascii_code
+                hashValue = (hashValue * multiplier) + sanitizedName.charCodeAt(i);
+            }
+
+            // 3. Map hash value to 001-999 range. prevent potential negative values
+            let finalStudentId = (Math.abs(hashValue) % 999) + 1;
             
-            finalRegNumber = year + colCode + paddedSeq;
+            // 4. Pad to 3 digits (e.g., 1 becomes 001, 40 becomes 040)
+            const paddedId = finalStudentId.toString().padStart(3, '0');
+            
+            finalRegNumber = year + colCode + paddedId;
         }
 
-        // Display Result
+        // Display Result and update display text
         document.getElementById('outputReg').innerText = finalRegNumber;
         document.getElementById('resultBox').style.display = 'block';
+        
+        // Dynamic description in the result box
+        const resultDesc = isRandom ? "Predicted Registration No. (Randomly selected)" : `Predicted Registration No. (Deterministic for name: ${stuNameForDisplay})`;
+        document.getElementById('resultText').innerText = resultDesc;
     }
 </script>
 
 </body>
 </html>
-          
